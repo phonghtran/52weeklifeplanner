@@ -5,10 +5,15 @@
       <div class="col-10">
         <h3>What You Have Control Over</h3>
 
-        <p>{{ timeSpans.freeTime / 52 }} years</p>
+        <p>{{ Math.floor(timeSpans.freeTime / 52) }} years of free time</p>
 
-        <template v-for="(item, index) in timeSpans.freeTime"
-          ><LifeBox v-bind:key="'freeTime' + index" />
+        <template v-for="category in hobbiesInWeekUnits">
+          <template v-for="(lifeBox, lifeBoxIndex) in category.count">
+            <LifeBox
+              v-bind:key="'freeTime' + category.class + lifeBoxIndex"
+              v-bind:class="freeTimeClass(category.class)"
+            />
+          </template>
         </template>
 
         <h3>Your Job Until Retirement</h3>
@@ -88,10 +93,27 @@
         </div>
 
         <div>
+          <h3>Activities</h3>
+          <button @click="activityAdd()">
+            Add Activity
+          </button>
+          <Activity
+            v-bind:count="activity.count"
+            v-bind:key="index"
+            v-bind:name="activity.name"
+            v-bind:offset="index"
+            v-for="(activity, index) in computedHobbies"
+            v-on:activityDelete="activityDelete"
+            v-on:activityNewName="activityNewName"
+          />
+        </div>
+
+        <div>
           <ul>
             <li>timeSpans {{ timeSpans }}</li>
 
             <li>{{ timeLeft }} timeLeft</li>
+            <li>{{ hobbies }} hobbies</li>
           </ul>
         </div>
       </div>
@@ -100,14 +122,30 @@
 </template>
 
 <script>
+  import Activity from "@/components/Activity.vue";
   import LifeBox from "@/components/LifeBox.vue";
 
   export default {
     name: "LifePlanner",
-    components: {
-      LifeBox,
-    },
+    components: { Activity, LifeBox },
     computed: {
+      computedHobbies: function() {
+        return this.hobbies;
+      },
+      hobbiesInWeekUnits: function() {
+        // if (this.hobbies.length === 0) {
+        return [
+          {
+            class: "",
+            count: this.timeSpans.freeTime,
+          },
+          {
+            class: "--sleeping",
+            count: this.timeSpans.freeTime,
+          },
+        ];
+        // }
+      },
       timeLeft: function() {
         return (this.lifeExpectancy - this.currentAge) * 52;
       },
@@ -124,8 +162,6 @@
         // 2.5 hours eating daily
         const lifeEating = Math.floor(0.1041666667 * this.timeLeft);
 
-        console.log(this.timeLeft, lifeAtWork, lifeSleeping, lifeEating);
-
         return {
           eating: lifeEating,
           expired: this.currentAge * 52,
@@ -139,10 +175,35 @@
       return {
         averageSleepHours: 8,
         currentAge: 34,
+        hobbies: [{ name: "Activity Name", count: 0 }],
         lifeExpectancy: 72,
         retirementAge: 65,
         workWeeklyHours: 40,
       };
+    },
+    methods: {
+      activityAdd: function() {
+        this.hobbies.push({ name: "Activity Name", count: 0 });
+      },
+      activityDelete: function(offset) {
+        if (this.hobbies.length > 1) {
+          let newArray = [...this.hobbies];
+
+          newArray.splice(offset, 1);
+
+          this.hobbies = [...newArray];
+        }
+      },
+      activityNewName: function(activityProp) {
+        console.log(activityProp);
+        this.hobbies[activityProp[1]]["name"] = activityProp[0];
+      },
+      freeTimeClass: function(category) {
+        let classObject = {};
+        classObject[category] = true;
+
+        return classObject;
+      },
     },
   };
 </script>
